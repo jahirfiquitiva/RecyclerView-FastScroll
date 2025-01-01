@@ -43,32 +43,9 @@ afterEvaluate {
                 groupId = 'dev.jahir'
                 artifactId = 'recyclerview-fastscroll'
                 version = '2.0.3'
-                artifact bundleReleaseAar
+                artifact(sourceJar)
+                artifact bundleRelease
             }
         }
     }
-}
-
-// build a jar with source files
-task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    archiveClassifier.set('sources')
-}
-
-task javadoc(type: Javadoc) {
-    failOnError false
-    source = android.sourceSets.main.java.sourceFiles
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    // classpath += configurations.compile
-}
-
-// build a jar with javadoc
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    archiveClassifier.set('javadoc')
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
 }
