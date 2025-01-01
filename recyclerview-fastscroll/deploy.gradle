@@ -14,8 +14,7 @@
  *  limitations under the License.
  */
 
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
+apply plugin: 'maven-publish'
 
 def Properties bintrayProps = new Properties()
 File bintrayProperties = file('bintray.properties')
@@ -26,40 +25,32 @@ if (bintrayProperties.exists()) {
 group = bintrayProps['group']
 version = bintrayProps['version']
 
-def pkgRepo = bintrayProps['repo']
 def pkgName = bintrayProps['pkgName']
-def libraryDescription = bintrayProps['description']
-
-def siteUrl = bintrayProps['siteUrl']      // Homepage URL of the library
-def gitUrl = bintrayProps['gitUrl']   // Git repository URL
-def issuesUrl = bintrayProps['issuesUrl']
-
-def licenceName = bintrayProps['licenceName']
-def licenceUrl = bintrayProps['licenceUrl']
-def licenceDistribution = bintrayProps['licenceDistribution']
-
-def developerId = bintrayProps['developerId']
-def developerName = bintrayProps['developerName']
-def developerEmail = bintrayProps['developerEmail']
-def developerOrg = bintrayProps['developerOrg']
 
 def publishJavadoc = bintrayProps['publishJavadoc']
 def publishSources = bintrayProps['publishSources']
-def publishDownloadNumbers = bintrayProps['publishDownloadNumbers']
 
+// build a jar with source files
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
+    archiveClassifier.set('sources')
 }
 
 task javadoc(type: Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
+    failOnError false
+    source = android.sourceSets.main.java.sourceFiles
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    // classpath += configurations.compile
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    archiveClassifier.set('javadoc')
     from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
 }
 
 artifacts {
@@ -71,74 +62,14 @@ artifacts {
     }
 }
 
-Properties properties = new Properties()
-File propertiesFile = project.rootProject.file('local.properties')
-if(propertiesFile.exists()) {
-    properties.load(new FileInputStream(propertiesFile))
-} else {
-    properties.setProperty('bintray.apikey', System.getenv('BINTRAY_KEY'))
-    properties.setProperty('bintray.user', System.getenv('BINTRAY_USER'))
-}
-
-bintray {
-    user = properties['bintray.user']
-    key = properties['bintray.apikey']
-
-    configurations = ['archives']
-    publish = true
-
-    pkg {
-        repo = pkgRepo
-        if (developerOrg) {
-            userOrg = developerOrg
-        }
-        name = pkgName
-        desc = libraryDescription
-        websiteUrl = siteUrl
-        vcsUrl = gitUrl
-        issueTrackerUrl = issuesUrl
-        publicDownloadNumbers = publishDownloadNumbers
-        version {
-            name = project.version
-            vcsTag = project.version
-            gpg {
-                sign = true //Determines whether to GPG sign the files. The default is false
-                passphrase = properties.getProperty("bintray.gpg.password")
-                //Optional. The passphrase for GPG signing'
-            }
-        }
-    }
-}
-
-install {
-    repositories.mavenInstaller {
-        pom {
-            project {
-                packaging 'aar'
-                name pkgName
-                description libraryDescription
-                url siteUrl
-                licenses {
-                    license {
-                        name licenceName
-                        url licenceUrl
-                        distribution licenceDistribution
-                    }
-                }
-                developers {
-                    developer {
-                        id developerId
-                        name developerName
-                        if (developerEmail) {
-                            email developerEmail
-                        }
-                    }
-                }
-                scm {
-                    connection gitUrl
-                    developerConnection gitUrl
-                    url siteUrl
-                }
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = bintrayProps['group']
+                artifactId = pkgName
+                version = bintrayProps['version']
             }
         }
     }
