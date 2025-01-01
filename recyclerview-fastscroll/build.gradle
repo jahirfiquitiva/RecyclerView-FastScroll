@@ -43,7 +43,7 @@ afterEvaluate {
                 groupId = 'dev.jahir'
                 artifactId = 'recyclerview-fastscroll'
                 version = '2.0.3'
-                artifact bundleRelease
+                artifact bundleReleaseAar
             }
         }
     }
